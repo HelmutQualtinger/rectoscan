@@ -140,7 +140,7 @@ def reorder_pdf_pages_general_rule(input_pdf_path: str, output_pdf_path: str):
     Raises:
         FileNotFoundError: If input file does not exist.
         pypdf.errors.PdfReadError: If the input file is not a valid PDF or is corrupted.
-        ValueError: If the input PDF contains no pages.
+        ValueError: If the input PDF contains no pages or an odd number of pages.
         Exception: For other potential errors during processing.
     """
     if not os.path.exists(input_pdf_path):
@@ -150,6 +150,10 @@ def reorder_pdf_pages_general_rule(input_pdf_path: str, output_pdf_path: str):
         reader = pypdf.PdfReader(input_pdf_path)
         writer = pypdf.PdfWriter()
         num_pages = len(reader.pages)
+
+        # Check if the number of pages is even. Raise an error if it's odd.
+        if num_pages % 2 != 0:
+            raise ValueError("Input PDF must have an even number of pages for this reordering rule.")
 
         if num_pages == 0:
             raise ValueError(f"Input PDF file '{input_pdf_path}' contains no pages.")
