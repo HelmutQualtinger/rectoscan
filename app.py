@@ -30,11 +30,11 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def reorder_pdf_pages(input_pdf_path: str, output_pdf_path: str) -> bool:
+def reorder_pdf_pages(input_pdf_path: str, output_pdf_path: str) -> tuple:
     """
     Reads a PDF in interleaved order (odd pages ascending, then even pages descending)
     and converts it back to sequential order (1, 2, 3, ..., n).
-    Returns True on success, False on failure.
+    Returns (True, None) on success, (False, error_message) on failure.
     """
     try:
         reader = pypdf.PdfReader(input_pdf_path)
@@ -42,11 +42,11 @@ def reorder_pdf_pages(input_pdf_path: str, output_pdf_path: str) -> bool:
         num_pages = len(reader.pages)
 
         if num_pages == 0:
-            raise ValueError("Input PDF file contains no pages.")
+            return False, "Die PDF-Datei enthält keine Seiten."
 
         # Check if even number of pages, as per previous requirement context
         if num_pages % 2 != 0:
-            raise ValueError("Input PDF must have an even number of pages for this reordering rule.")
+            return False, f"Die PDF-Datei muss eine gerade Anzahl von Seiten haben. Diese Datei hat {num_pages} Seiten."
 
         # Generate the interleaved order: odd pages ascending, then even pages descending
         interleaved_order = []
@@ -73,21 +73,21 @@ def reorder_pdf_pages(input_pdf_path: str, output_pdf_path: str) -> bool:
         # Write the reordered PDF to the output file
         with open(output_pdf_path, "wb") as output_file:
             writer.write(output_file)
-        
-        return True # Indicate success
+
+        return True, None # Indicate success
 
     except FileNotFoundError:
-        print(f"Error: Input file not found at {input_pdf_path}")
-        return False
+        error_msg = f"Eingabedatei nicht gefunden: {input_pdf_path}"
+        print(f"Error: {error_msg}")
+        return False, error_msg
     except pypdf.errors.PdfReadError as e:
+        error_msg = f"PDF-Lesefehler: Die Datei ist möglicherweise beschädigt oder kein gültiges PDF. Fehlerdetails: {str(e)}"
         print(f"PDF Read Error: {e}")
-        return False
-    except ValueError as e:
-        print(f"Value Error: {e}")
-        return False
+        return False, error_msg
     except Exception as e:
+        error_msg = f"Fehler beim Umordnen: {str(e)}"
         print(f"An unexpected error occurred during PDF reordering: {e}")
-        return False
+        return False, error_msg
 
 # --- HTML Template for Upload Form ---
 # Using render_template_string for simplicity. Using raw string r"""...""" to prevent issues with backslashes.
@@ -173,30 +173,30 @@ def upload_file():
             
             try:
                 file.save(temp_upload_path)
-                
+
                 # Define output path for the reordered file
                 reordered_filename = f"reordered_{unique_id}_{original_filename}"
                 output_pdf_path = os.path.join(app.config['REORDERED_FOLDER'], reordered_filename)
-                
+
                 # Reorder the PDF
-                success = reorder_pdf_pages(temp_upload_path, output_pdf_path)
-                
+                success, error_message = reorder_pdf_pages(temp_upload_path, output_pdf_path)
+
                 if success:
-                    flash(f'File "{original_filename}" uploaded and reordered successfully!', 'success')
+                    flash(f'Datei "{original_filename}" erfolgreich hochgeladen und umgeordnet!', 'success')
                     # Construct URL for download
                     reordered_file_url = url_for('download_file', filename=reordered_filename)
                     # Optionally, remove the original uploaded file after successful reordering
-                    # os.remove(temp_upload_path) 
+                    # os.remove(temp_upload_path)
                 else:
-                    # Flash error message from reorder_pdf_pages if it raised one or handle generic error
-                    flash(f'Error reordering file "{original_filename}". Please check the file and try again.', 'error')
+                    # Flash detailed error message from reorder_pdf_pages
+                    flash(f'Fehler beim Umordnen von "{original_filename}": {error_message}', 'error')
                     # Optionally, remove the failed upload if it wasn't removed already
                     if os.path.exists(temp_upload_path):
                         os.remove(temp_upload_path)
 
             except Exception as e:
                 # Catch any unexpected errors during file saving or processing
-                flash(f'An unexpected error occurred: {e}', 'error')
+                flash(f'Ein unerwarteter Fehler ist aufgetreten: {str(e)}', 'error')
                 # Clean up temp file if it exists and an error occurred
                 if os.path.exists(temp_upload_path):
                     os.remove(temp_upload_path)
