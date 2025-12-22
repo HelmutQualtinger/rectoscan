@@ -226,4 +226,4 @@ def download_file(filename):
 # This block is used when running the script directly (e.g., python app.py)
 # It is not used when running with 'flask run'.
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='127.0.0.1', port=5000, debug=True)
