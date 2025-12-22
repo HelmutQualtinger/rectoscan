@@ -1,2 +1,4 @@
+Flask
 pypdf
-PyQt5
+werkzeug
+gunicorn
