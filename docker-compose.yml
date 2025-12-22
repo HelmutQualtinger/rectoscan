@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  rectoscan-web:
+    build: .
+    ports:
+      - "7777:5000"
+    container_name: rectoscan-web-container
+    networks:
+      reverse-proxy:
+        aliases:
+          - rectoscan-web
+
+networks:
+  reverse-proxy:
+    external: true

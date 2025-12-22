@@ -26,7 +26,9 @@ This README file provides an overview of the project, setup instructions, and us
 
 This project provides a graphical user interface (GUI) application, `reorder_pdf_gui.py`, built with Tkinter, that allows users to reorder pages within a PDF document. The primary function is to rearrange pages according to a specific rule: all odd-numbered pages are placed first in their natural ascending order (1, 3, 5, ...), followed by all even-numbered pages in reverse descending order (..., 8, 6, 4, 2). This is particularly useful for PDFs that may have been double-sided scanned in an interleaved format.
 
-### Usage
+Additionally, the project includes a web application component served by `app.py`, allowing for PDF reordering through a web interface.
+
+### Usage (GUI Application)
 
 1.  **Ensure Dependencies are Installed:**
     Make sure you have followed the installation steps in the "Installation" section above, which includes installing `pypdf`.
@@ -65,3 +67,39 @@ To scan double-sided documents using a single-sided scanner and have the back pa
     *   Use the `reorder_pdf_gui.py` script from this project to reorder this single, interleaved PDF into the standard sequential order (1, 2, 3, 4, ...). The script is designed precisely to correct this type of interleaved output.
 
 **Note:** The exact wording and functionality for "Continue Scanning" or "Add Pages" will vary significantly depending on your scanner's model and its accompanying software. If your scanner software does not support appending scans to an existing document in this manner, you may need to revert to the method of creating two separate files and then reordering them.
+
+## Web Container Usage
+
+This project can be run as a web application within a Docker container. This allows for easy deployment and consistent execution across different environments.
+
+### Prerequisites
+
+*   Docker installed on your system.
+
+### Building the Docker Image
+
+Navigate to the root of the project directory (where the `Dockerfile` is located) and run the following command to build the Docker image:
+
+```bash
+docker build -t rectoscan-web .
+```
+
+This command tags the image as `rectoscan-web`.
+
+### Running the Web Application
+
+Once the image is built, you can run a container from it using the following command:
+
+```bash
+docker run -p 8000:8000 rectoscan-web
+```
+
+This command maps port 8000 on your host machine to port 8000 inside the container, where the web application is expected to be running (typically served by `app.py`).
+
+### Accessing the Application
+
+After starting the container, you can access the web interface by navigating to:
+
+`http://localhost:8000`
+
+in your web browser. The web interface will provide functionality to upload PDFs and reorder their pages.

@@ -1,28 +1,44 @@
-# Use an official Python runtime as a parent image
-FROM python:3.9-slim-buster
+# Stage 1: Builder
+FROM python:3.9-alpine as builder
 
-# Set the working directory in the container
-WORKDIR /app
+# Install build dependencies
+RUN apk add --no-cache gcc musl-dev
 
-# Copy the requirements file into the container
+# Create virtual environment and install packages
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
 COPY requirements.txt .
-
-# Install any needed packages specified in requirements.txt
-# Using --no-cache-dir to keep the image size smaller
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the current directory contents into the container at /app
-# This includes app.py, the templates directory, and any other necessary files
+# Stage 2: Runtime
+FROM python:3.9-alpine
+
+# Install only runtime dependencies
+RUN apk add --no-cache ca-certificates
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+
+# Set environment variables
+ENV PATH="/opt/venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+WORKDIR /app
+
+# Copy application code
 COPY . .
 
-# Make sure the upload and reordered folders exist and are writable by the application
-RUN mkdir -p /app/uploads /app/reordered
+# Create upload and reordered folders
+RUN mkdir -p /app/uploads /app/reordered && \
+    chmod 777 /app/uploads /app/reordered
 
-# Make port 5000 available to the world outside this container
+# Use non-root user
+USER nobody
+
+# Expose port 5000
 EXPOSE 5000
 
-# Run the application using Flask's built-in development server
-# --host=0.0.0.0 makes the server accessible from outside the container
-# --port=5000 is the port we've exposed
-# --debug=True is useful for development, but should be False in production
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5000", "--debug"]
+# Run with gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "app:app"]
