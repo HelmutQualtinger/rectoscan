@@ -36,7 +36,7 @@ When scanning a double-sided document with a single-sided scanner, the typical w
 Once the container is running, open your browser and navigate to the address exposed by your reverse proxy, or access it directly at:
 
 ```
-http://localhost:8000
+http://localhost:5000
 ```
 
 Use the web interface to:
